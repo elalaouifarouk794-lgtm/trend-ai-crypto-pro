@@ -1,0 +1,10 @@
+{
+  "name": "trend-ai-crypto-pro",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TREND AI CRYPTO PRO — crypto market intelligence dashboard with AI copilot, scanner and paper trading simulator. Public key-free APIs only; simulation, no real money.",
+  "scripts": {
+    "start": "node serve.js"
+  }
+}
