@@ -117,6 +117,23 @@
     </div>
   </div>
 
+  <!-- Floating AI chat widget (available on every page) -->
+  <div class="chat-widget" id="chat-widget">
+    <div class="chat-panel card" id="chat-panel" role="dialog" aria-label="TREND AI assistant chat" hidden>
+      <div class="chat-panel-head">
+        <span class="chat-panel-title"><span class="dot dot-live"></span>TREND AI Assistant</span>
+        <button class="icon-btn chat-panel-close" id="chat-close" aria-label="Close chat">
+          <svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="chat-panel-body" id="chat-widget-mount"></div>
+    </div>
+    <button class="chat-bubble" id="chat-bubble" aria-label="Open AI assistant chat" aria-expanded="false" title="Ask TREND AI">
+      <svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 4v-4H6a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="8.5" cy="10" r="1.1" fill="currentColor"/><circle cx="12" cy="10" r="1.1" fill="currentColor"/><circle cx="15.5" cy="10" r="1.1" fill="currentColor"/></svg>
+      <span class="chat-bubble-pulse"></span>
+    </button>
+  </div>
+
   <div class="toast-host" id="toast-host" aria-live="polite"></div>
 
   <script type="module" src="js/main.js"></script>

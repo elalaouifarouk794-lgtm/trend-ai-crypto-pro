@@ -6,6 +6,7 @@ import { refreshMarketData } from "./api.js";
 import { startRouter, reloadView } from "./router.js";
 import { fmtUsd, debounce } from "./utils.js";
 import { toast } from "./toast.js";
+import { mountChat } from "./chat.js";
 
 /* ---------- sidebar (mobile) ---------- */
 document.getElementById("menu-toggle").addEventListener("click", () => {
@@ -99,6 +100,37 @@ document.getElementById("global-search").addEventListener("input", debounce((e) 
     toast(`Showing market rows for “${hit.name}”.`, "info", 2000);
   }
 }, 400));
+
+/* ---------- floating chat widget ---------- */
+const chatWidget = document.getElementById("chat-widget");
+const chatPanel = document.getElementById("chat-panel");
+const chatBubble = document.getElementById("chat-bubble");
+const chatClose = document.getElementById("chat-close");
+let widgetChat = null;
+
+function openChat() {
+  chatPanel.hidden = false;
+  chatWidget.classList.add("open");
+  chatBubble.setAttribute("aria-expanded", "true");
+  if (!widgetChat) {
+    widgetChat = mountChat(document.getElementById("chat-widget-mount"), {
+      compact: true,
+      greeting: "Hi — I'm the TREND AI assistant. Ask me about the market, a coin, or any crypto concept.",
+      suggestions: ["How is the market?", "Analyze Bitcoin", "What is RSI?"],
+    });
+  }
+}
+function closeChat() {
+  chatPanel.hidden = true;
+  chatWidget.classList.remove("open");
+  chatBubble.setAttribute("aria-expanded", "false");
+  chatBubble.focus();
+}
+chatBubble.addEventListener("click", () => (chatPanel.hidden ? openChat() : closeChat()));
+chatClose.addEventListener("click", closeChat);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !chatPanel.hidden) closeChat();
+});
 
 /* ---------- boot ---------- */
 startRouter();

@@ -54,11 +54,7 @@ export async function render(root) {
   root.querySelector("#wl-goto-market")?.addEventListener("click", () => go("market"));
   root.querySelector("#wl-add").addEventListener("click", () => go("market"));
   root.querySelector("#wl-analyze")?.addEventListener("click", () => {
-    window.__pendingCopilotCoin = null;
+    window.__pendingCopilotAsk = "Scan my watchlist";
     go("copilot");
-    setTimeout(() => {
-      const input = document.getElementById("cop-input");
-      if (input) { input.value = "Scan my watchlist"; input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); }
-    }, 500);
   });
 }
