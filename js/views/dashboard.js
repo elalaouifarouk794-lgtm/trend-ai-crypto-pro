@@ -3,7 +3,7 @@
 import { store } from "../state.js";
 import { fetchMarketChart } from "../api.js";
 import { kpiCard, coinTable, bindCoinTable, loadingGrid } from "../components.js";
-import { priceChart, donutChart } from "../charts.js";
+import { priceChart, donutChart, sentimentGauge } from "../charts.js";
 import { marketOverview, analyzeCoin, scoreLabel } from "../analysis.js";
 import { fmtUsd, fmtCompact, fmtPct, deltaSpan, timeAgo, errorState } from "../utils.js";
 import { go } from "../router.js";
@@ -123,19 +123,7 @@ export async function render(root) {
 
   // Fear & greed gauge (doughnut arc)
   const fngCanvas = root.querySelector("#dash-fng");
-  if (fngCanvas && ov) {
-    const v = ov.fng ?? 50;
-    new Chart(fngCanvas, {
-      type: "doughnut",
-      data: {
-        labels: ["Sentiment", ""],
-        datasets: [{ data: [v, 100 - v], backgroundColor: [fngColor(v), "rgba(86,130,255,0.10)"], borderWidth: 0 }] },
-      options: {
-        rotation: -120, circumference: 240, cutout: "74%", responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { enabled: false } },
-      },
-    });
-  }
+  if (fngCanvas && ov) sentimentGauge(fngCanvas, ov.fng ?? 50, fngColor(ov.fng));
 
   // Cap distribution donut
   const donut = root.querySelector("#dash-donut");

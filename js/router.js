@@ -16,6 +16,7 @@ export const ROUTES = {
 };
 
 let currentRoute = null;
+let renderQueue = Promise.resolve();
 
 function syncNav(route) {
   document.querySelectorAll(".nav-item").forEach((a) => {
@@ -25,17 +26,10 @@ function syncNav(route) {
   document.body.classList.remove("nav-open");
 }
 
-async function navigate() {
-  const route = (location.hash.replace(/^#\//, "") || "dashboard").split("?")[0];
+async function renderRoute(route) {
   const def = ROUTES[route] || ROUTES.dashboard;
-  if (route === currentRoute) return;
-
   const container = root();
   destroyAllIn(container);
-  container.classList.add("switching");
-  await new Promise((r) => setTimeout(r, 160));
-  container.classList.remove("switching");
-
   currentRoute = route;
   syncNav(route);
   container.innerHTML = "";
@@ -49,20 +43,29 @@ async function navigate() {
   window.scrollTo({ top: 0 });
 }
 
-// Re-render the active view without changing the hash (used by refresh).
-export async function reloadView() {
-  const route = (location.hash.replace(/^#\//, "") || "dashboard").split("?")[0];
-  const def = ROUTES[route] || ROUTES.dashboard;
+async function transition(route) {
   const container = root();
-  destroyAllIn(container);
-  container.innerHTML = "";
-  try {
-    const mod = await def.module();
-    await mod.render(container);
-  } catch (err) {
-    console.error("[router]", err);
-    container.innerHTML = `<div class="state-box"><h3>View failed to load</h3><p>${err.message}</p></div>`;
-  }
+  container.classList.add("switching");
+  await new Promise((r) => setTimeout(r, 160));
+  container.classList.remove("switching");
+  await renderRoute(route);
+}
+
+function schedule(route, animate) {
+  renderQueue = renderQueue.then(() => (animate ? transition(route) : renderRoute(route))).catch(console.error);
+  return renderQueue;
+}
+
+function navigate() {
+  const route = (location.hash.replace(/^#\//, "") || "dashboard").split("?")[0];
+  if (route === currentRoute) return;
+  return schedule(route, true);
+}
+
+// Re-render the active view without changing the hash (used by refresh).
+export function reloadView() {
+  const route = (location.hash.replace(/^#\//, "") || "dashboard").split("?")[0];
+  return schedule(route, false);
 }
 
 export function go(route) {
