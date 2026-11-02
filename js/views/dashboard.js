@@ -21,7 +21,7 @@ export async function render(root) {
   const ov = marketOverview(store.coins, store.global, store.fng);
   const btc = store.coinById("bitcoin");
   const eth = store.coinById("ethereum");
-  const demoTag = store.apiMode === "demo" ? '<span class="chip warn">DEMO DATA</span>' : "";
+  const demoTag = store.apiMode === "demo" || store.global?.demo ? '<span class="chip warn">DEMO DATA</span>' : "";
 
   const topMovers = [...store.coins]
     .filter((c) => c.id !== "tether")

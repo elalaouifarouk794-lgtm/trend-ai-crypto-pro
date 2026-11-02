@@ -152,9 +152,11 @@ export async function fetchMarkets() {
 
 export async function fetchGlobal() {
   const url = `${CONFIG.api.baseUrl}/global`;
-  const { data } = await fetchWithFallback("global", url, demoGlobal);
+  const { data, live } = await fetchWithFallback("global", url, demoGlobal);
   // CoinGecko wraps /global payloads in a `data` envelope.
-  store.setGlobal(data?.data ?? data);
+  const payload = data?.data ?? data;
+  if (!live) payload.demo = true;
+  store.setGlobal(payload);
 }
 
 export async function fetchTrending() {
