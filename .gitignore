@@ -1,3 +1,6 @@
 .env
 node_modules/
 .DS_Store
+
+# Agent ledger + local runtime state (contains trade history)
+data/
