@@ -50,6 +50,9 @@ export function deltaSpan(n, label = "") {
   return `<span class="delta ${cls}">${arrow} ${label || fmtPct(n)}</span>`;
 }
 
+export const escapeHtml = (s) =>
+  String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
 export function timeAgo(ts) {
   const s = Math.max(1, Math.floor((Date.now() - ts) / 1000));
   if (s < 60) return s + "s ago";

@@ -445,6 +445,9 @@ select.input option { background: var(--surface-solid); }
   color: #ffe1a1; border-radius: var(--r-md); padding: 12px 15px; font-size: 12px; line-height: 1.55;
 }
 .notice .ic { flex: none; font-weight: 800; }
+.notice.danger { border-color: rgba(255,92,122,.45); background: rgba(255,92,122,.1); color: #ffd0d8; animation: pulseDanger 2.4s ease-in-out infinite; }
+@keyframes pulseDanger { 50% { border-color: rgba(255,92,122,.85); box-shadow: 0 0 22px rgba(255,92,122,.18); } }
+.mono { font-family: var(--font-mono); }
 
 /* ---------- States: skeleton / empty / error ---------- */
 .skeleton { border-radius: var(--r-md); background: linear-gradient(100deg, rgba(20,38,78,.5) 40%, rgba(41,66,120,.5) 50%, rgba(20,38,78,.5) 60%); background-size: 220% 100%; animation: shimmer 1.4s infinite; }

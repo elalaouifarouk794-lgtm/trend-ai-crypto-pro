@@ -13,6 +13,7 @@ export const ROUTES = {
   watchlist: { title: "Watchlist", module: () => import("./views/watchlist.js") },
   news: { title: "News & Narratives", module: () => import("./views/news.js") },
   paper: { title: "Paper Trading Simulator", module: () => import("./views/paper.js") },
+  agent: { title: "AI Trading Agent", module: () => import("./views/agent.js") },
 };
 
 let currentRoute = null;

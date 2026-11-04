@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "TREND AI CRYPTO PRO — crypto market intelligence dashboard with AI copilot, scanner and paper trading simulator. Public key-free APIs only; simulation, no real money.",
+  "description": "TREND AI CRYPTO PRO — crypto market intelligence dashboard with AI copilot, scanner, paper-trading simulator and a server-side AI trading agent (paper/testnet/live Binance spot). Keys stay server-side; live mode is opt-in and risk-gated.",
   "scripts": {
     "start": "node serve.js"
   }

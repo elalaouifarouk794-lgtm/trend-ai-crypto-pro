@@ -1,18 +1,23 @@
-// TREND AI CRYPTO PRO — zero-dependency static server + AI chat proxy.
+// TREND AI CRYPTO PRO — zero-dependency static server, AI chat proxy and
+// trading-agent backend.
 //
 // POST /api/chat  { messages: [{role, content}], context?: string }
 //   -> { reply: string }                  when an AI provider is configured
 //   -> 503 { error, fallback: true }      when no key is set (frontend uses its
 //                                          local rule engine instead)
 //
-// The API key lives ONLY here, read from process.env or a local .env file.
-// It is never sent to the browser. Supports any OpenAI-compatible endpoint
+// /api/agent/*    see server/agent-api.mjs — loopback-only unless
+//                 AGENT_API_TOKEN is set. The exchange secret stays here.
+//
+// The API keys live ONLY here, read from process.env or a local .env file.
+// They are never sent to the browser. Supports any OpenAI-compatible endpoint
 // (OpenAI, OpenRouter, Groq, local Ollama/LM Studio, ...).
 
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import { extname, join, normalize, resolve, sep } from "node:path";
+import { createAgentApi } from "./server/agent-api.mjs";
 
 const ROOT = resolve(process.cwd());
 const PORT = Number(process.env.PORT || 8090);
@@ -44,7 +49,7 @@ const SYSTEM_PROMPT = [
   "- Respond in English only.",
   "- You explain markets, indicators, risk concepts and the supplied live market context.",
   "- Never give financial advice, price predictions framed as certainty, or instructions to buy/sell.",
-  "- Never execute or simulate real trades; the app's paper trader is virtual-only.",
+  "- You have no ability to place orders. The separate Agent page is the only thing that trades, and it is user-controlled.",
   "- Be concise (under ~180 words), structured with short paragraphs or bullets.",
   "- If asked something outside crypto education or market analysis, politely redirect.",
   "- When a MARKET CONTEXT block is provided, ground your answer in those numbers.",
@@ -97,7 +102,7 @@ function sanitizeMessages(raw) {
     .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }));
 }
 
-async function callProvider(messages) {
+async function providerComplete(messages, { temperature = 0.4, maxTokens = 700 } = {}) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), AI.timeoutMs);
   try {
@@ -111,8 +116,8 @@ async function callProvider(messages) {
       body: JSON.stringify({
         model: AI.model,
         messages,
-        temperature: 0.4,
-        max_tokens: 700,
+        temperature,
+        max_tokens: maxTokens,
       }),
     });
     if (!res.ok) throw new Error(`provider HTTP ${res.status}`);
@@ -124,6 +129,23 @@ async function callProvider(messages) {
     clearTimeout(timer);
   }
 }
+
+// The trading agent talks to the same provider through this narrow adapter, so
+// it can never see the key and only ever gets a completion back.
+const ai = {
+  get configured() {
+    return Boolean(AI.apiKey);
+  },
+  get model() {
+    return AI.model;
+  },
+  complete: (messages, opts) => {
+    if (!AI.apiKey) return Promise.reject(new Error("AI provider not configured"));
+    return providerComplete(messages, opts);
+  },
+};
+
+const agent = createAgentApi({ env: process.env, ai, file: join(ROOT, "data", "agent.json") });
 
 async function handleChat(req, res) {
   const ip = req.socket.remoteAddress || "unknown";
@@ -150,7 +172,7 @@ async function handleChat(req, res) {
   const messages = [{ role: "system", content: SYSTEM_PROMPT + (context ? `\n\n${context}` : "") }, ...history];
 
   try {
-    const reply = await callProvider(messages);
+    const reply = await providerComplete(messages);
     json(res, 200, { reply, model: AI.model });
   } catch (err) {
     // Never surface provider details beyond a generic message.
@@ -189,18 +211,36 @@ function serveStatic(req, res) {
 }
 
 createServer(async (req, res) => {
+  if (req.url.startsWith("/api/agent/")) {
+    try { await agent.handle(req, res); }
+    catch (err) { console.error("[agent]", err); if (!res.headersSent) json(res, 500, { error: "Agent endpoint failed." }); }
+    return;
+  }
   if (req.method === "POST" && req.url === "/api/chat") {
     try { await handleChat(req, res); }
     catch (err) { console.error("[chat]", err); if (!res.headersSent) json(res, 500, { error: "Internal error.", fallback: true }); }
     return;
   }
   if (req.url === "/api/health") {
-    json(res, 200, { ok: true, aiConfigured: !!AI.apiKey, model: AI.apiKey ? AI.model : null });
+    json(res, 200, {
+      ok: true,
+      aiConfigured: !!AI.apiKey,
+      model: AI.apiKey ? AI.model : null,
+      agent: {
+        mode: agent.engine.config.mode,
+        running: agent.engine.config.running,
+        exchangeKeys: Boolean(process.env.BINANCE_API_KEY && process.env.BINANCE_API_SECRET),
+      },
+    });
     return;
   }
   if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405).end(); return; }
   serveStatic(req, res);
-}).listen(PORT, () => {
+}).listen(PORT, async () => {
+  await agent.boot();
   console.log(`TREND AI CRYPTO PRO → http://localhost:${PORT}`);
   console.log(`AI chat endpoint: POST /api/chat (${AI.apiKey ? `configured · ${AI.model}` : "no key — clients use local fallback"})`);
+  const cfg = agent.engine.config;
+  console.log(`Trading agent: ${cfg.mode.toUpperCase()} mode · ${cfg.running ? "RUNNING" : "stopped"} · allowlist ${cfg.symbols.join(", ")} · max ${cfg.maxOrderUsd} USD/order`);
+  if (cfg.mode !== "paper") console.log(`  ! ${agent.liveBlockedReason || "live venue selected — real orders will be sent"}`);
 });
