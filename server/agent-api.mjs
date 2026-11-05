@@ -197,3 +197,42 @@ export function createAgentApi({ env = process.env, ai, file = "data/agent.json"
     },
   };
 }
+// --- MetaTrader 5 GridBot Integration Endpoints ---
+import fs from 'fs';
+import path from 'path';
+
+const DATA_FILE = path.join(process.cwd(), 'server', 'mt5-bot-data.json');
+
+export function registerMT5BotRoutes(app) {
+    // POST: استقبال البيانات من بوت MT5
+    app.post('/api/mt5-bot', (req, res) => {
+        const { bot_name, status, equity, balance, open_positions, secret_token } = req.body;
+
+        const AUTH_TOKEN = process.env.AGENT_API_TOKEN || "MY_SECRET_KEY_123";
+        if (secret_token && secret_token !== AUTH_TOKEN) {
+            return res.status(401).json({ success: false, message: "Unauthorized token" });
+        }
+
+        const payload = {
+            bot_name: bot_name || "MT5 GridBot",
+            status: status || "UNKNOWN",
+            equity: equity || 0.0,
+            balance: balance || 0.0,
+            open_positions: open_positions || 0,
+            last_update: new Date().toISOString()
+        };
+
+        fs.writeFileSync(DATA_FILE, JSON.stringify(payload, null, 2));
+        console.log(`[MT5 AGENT UPDATE] Status: ${payload.status} | Equity: ${payload.equity}`);
+        return res.json({ success: true, message: "State received successfully" });
+    });
+
+    // GET: قراءة البيانات لعرضها في الموقع
+    app.get('/api/mt5-bot', (req, res) => {
+        if (!fs.existsSync(DATA_FILE)) {
+            return res.json({ status: "STOPPED", equity: 0, balance: 0, open_positions: 0 });
+        }
+        const rawData = fs.readFileSync(DATA_FILE);
+        res.json(JSON.parse(rawData));
+    });
+}
